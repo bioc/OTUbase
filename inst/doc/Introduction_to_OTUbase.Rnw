@@ -1,0 +1,211 @@
+%\VignetteIndexEntry{An introduction to OTUbase}
+%\VignetteDepends{}
+%\VignetteKeywords{OTU base, OTU, rdp}
+%\VignettePackage{OTUbase}
+\documentclass[]{article}
+
+\usepackage{times}
+\usepackage{hyperref}
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+
+\newcommand{\software}[1]{\textsf{#1}}
+\newcommand{\R}{\software{R}}
+\newcommand{\OTUbase}{\Rpackage{OTUbase}}
+
+\newcommand{\ELAND}{\software{ELAND}}
+\newcommand{\MAQ}{\software{MAQ}}
+\newcommand{\Bowtie}{\software{Bowtie}}
+
+\title{An Introduction to \Rpackage{OTUbase}}
+\date{Modified: 8 September 2010. Compiled: \today}
+
+\begin{document}
+
+\maketitle
+
+<<options,echo=FALSE>>=
+options(width=60)
+@ 
+
+<<preliminaries>>=
+library("OTUbase")
+@ 
+
+The \Rpackage{OTUbase} package provides an organized structure for OTU (Operational Taxonomic Unit) data analysis. In addition, it provides a similar structure for general read-taxonomy classification type data. \Rpackage{OTUbase} provides some basic functions to analyze the data as well. 
+
+
+\section{A simple workflow}
+
+This section walks through a simple workflow using a small example dataset. It demonstrates the main features of OTUbase. The data used for this example comes from a dataset described in "Microbial diversity in the deep sea and the underexplored 'rare biosphere'" by Sogin et al. (PNAS 2006). The complete dataset is available through PNAS. A random set of 1000 sequences was taken from this dataset.
+
+\subsection{Sample meta data}
+
+Sample metadata is collected along with the sample. This data may include any number of different pieces of information about the sample. In the example dataset, the meta data is provided in Table 1 of Sogin et al. This file is named 'sample\_metadata.txt'. To be easily read by OTUbase, this file is in the form of an AnnotatedDataFrame. 
+
+
+\subsection{Sequence preprocessing}
+
+This section describes the preprocessing steps necessary to generate the files used by OTUbase.
+
+\subsubsection{Sequence trimming and filtering}
+
+Many OTU data projects will begin with raw sequence reads from a next generation pyrosequencer. These reads may include primers, barcodes, and/or adapters that are not part of the actual read. The first step in the analysis pipeline is to trim the primers and barcodes from the read. A number of tools are able to do this. Commands in Mothur are 'trim.seqs()' and 'filter.seqs()'. For this workflow we are assuming that these steps have already been done. When the barcodes are trimmed off the reads, a separate file is generally created that links the read with a sample identification. Mothur creates this file automatically and gives it a '.groups' extension. Each line of this file contains a read ID and the ID of the sample the read belongs to, separated by a tab. OTUbase requires this groups file. 
+
+\subsection{Taxonomic classification and OTU generation}
+
+There are two main approaches used to analyse amplicon data. An OTU approach involves first clustering the sequences together by similarity into OTUs or Operational Taxonomic Units. These OTUs can then be used in richness calculations and in comparing two samples. An alternate approach attempts to classify each sequence into an existing taxonomy. The RDP classifier, for example, uses a Markof model to sort sequences into genus level classifications. 
+
+The data produced by these two approaches is slightly different. The OTU approach results in a list of sequences belonging to each OTU. The classification approach results in each sequence having a classification. OTUbase is able to use either of these types of data.
+
+The data processing involved in OTU generation is described by Pat Schloss on the Mothur web site. Those interested can find the OTU generation steps for Sogin's data at \href{http://www.mothur.org/wiki/Sogin\_data\_analysis}. 
+
+The data processing involved in the RDP taxonomic classification is somewhat simpler and less computationally demanding. Details can be found on the RDP website \href{http://rdp.cme.msu.edu/classifier/classifier.jsp}.
+
+\subsubsection{Reducing the dataset to unique sequences}
+
+To decrease the computation time involved in both techniques, duplicate sequences in the dataset are removed first. These sequences can the be added back in after the processing is complete. Mothur removes the duplicate sequences with the command 'unique.seqs()' which also automatically generates a file that keeps track of which sequences have duplicates (called a name file).
+
+In this workflow the duplicate sequences have been removed using Mothur. The name file is called 'sogin.names'
+
+\subsection{Importing files into an OTUbase object}
+
+OTUbase is able to automatically import a number of files generated during the data processing. These files include the sample file (the group file produced by Mothur), the OTU file (the list file produced by Mothur), and the meta data (in AnnotatedDataFrame format). In addition OTUbase inherits \Rpackage{ShortRead} which allows the user to include a fasta file and a quality file. OTUbase also recognizes the RDP taxonomic classification files that are in the 'fixed' format.
+
+<<dirPath>>=
+dirPath <- system.file("extdata/Sogin_2006", package="OTUbase")
+@
+%%
+Usually \Rcode{dirPath} will be the directory path containing the files that will be read by OTUbase.
+
+Because there are two main approaches to data analysis (OTU and Taxonomic classification) we will look at both in parallel. To read in OTU related data the function \Rcode{readOTUset()} is used. Likewise, to read in classification data the function \Rcode{readTAXset()} is used.
+
+<<readOTUset>>=
+soginOTU <- readOTUset(dirPath=dirPath, level="0.03", samplefile="sogin.groups", fastafile="sogin.fasta", otufile="sogin.unique.filter.fn.list", sampleADF="sample_metadata.txt")
+soginOTU
+@
+%%
+
+The level is the OTU classification level desired (many clustering levels may be present in one otufile). The default is '0.03'. The samplefile connects the read ID to the sample it belongs to. The fastafile and the associated quality file are optional. Their inclusion may make the reading of the data significantly slower. The otufile must be in Mothur format. The sampleADF is the sample meta data file.
+
+<<readTAXset>>=
+soginTAX <- readTAXset(dirPath=dirPath, fastafile='sogin.fasta', sampleADF='sample_metadata.txt', taxfile='sogin.unique.fix.tax', namefile='sogin.names', samplefile='sogin.groups')
+soginTAX
+@
+%%
+
+The \Rfunction{readTAXset} function only differs from the \Rfunction{readOTUset} function slightly. Notably different is the absence of an otufile and the presence of a taxfile (in this case the RDP fixed output). Also included in the \Rfunction{readTAXset} function is the namefile. This file is the Mothur names file and should be included when the dataset has been reduced to unique sequences.
+
+
+\subsection{Accessing data in OTUbase objects}
+
+OTUbase provides a number of accessor functions that allow the user to easily access the data contained in the OTUbase object. \Rmethod{sread}, \Rmethod{quality}, and \Rmethod{id} are inherited from the \Rpackage{ShortRead} package and allow access to the sequence, the quality, and the sequence id. In addition, \Rmethod{sampleID}, \Rmethod{sData}, and \Rmethod{aData} provide access to the sample ID, the sample meta data, and the assignment meta data respectively (when available).
+
+<<accessors>>=
+head(id(soginOTU))
+head(sread(soginOTU))
+head(sampleID(soginOTU))
+head(sData(soginOTU))
+@
+%%
+
+There are a couple accessors specific to OTUset or TAXset. To access the OTU IDs stored in OTUset objects, \Rmethod{otuID} is used. Likewise, to access the taxonomic classifications stored in TAXset objects, \Rmethod{tax} is used.
+
+<<accessors>>=
+head(otuID(soginOTU))
+head(tax(soginTAX))
+@
+%%
+
+\subsection{First data analysis steps}
+
+Now that the data is in the OTUbase object, we can now generate tables and figures that help analyze it. One of the first steps in many analyses is the generation of an abundance table. There is an OTUbase method that does this. 
+
+<<abundance>>=
+abundOTU <- abundance(soginOTU, weighted=F, collab='Site')
+head(abundOTU)
+abundTAX <- abundance(soginTAX, weighted=F, taxCol='genus', collab='Site')
+head(abundTAX)
+@
+%%
+
+It should be noted that the abundance method for TAXset objects requires one extra piece of information, the column of the classification desired. The abundance can be generated from any of them (genus, family, etc). Other options are also available in the abundance methods. For example, the abundance can be generated based on any column in the assignment data. For more on the abundance method please see the help documentation.
+
+One of the strengths of OTUbase is that by being in the R environment it can take advantage of a number of available data analysis packages. One of these packages is \Rpackage{vegan}. \Rpackage{vegan} is an R package that provides many tools to analyze ecological type data. It includes diversity estimation and cluster analysis.
+
+Using the functions provided by vegan and the abundance table previously generated:
+
+<<RichnessEstimate>>=
+estrichOTU <- apply(abundOTU, 2, estimateR)
+estrichOTU
+estrichTAX <- apply(abundTAX, 2, estimateR)
+estrichTAX
+@
+%%
+
+The vegan function vegedist and hclust have been combined into one OTUbase wrapper for convenience. This allows the user to quickly cluster the samples. This clustering can be done using a number of different distance and clustering methods.
+
+<<clusterSamples>>=
+clusterSamples(soginOTU, distmethod='jaccard', clustermethod='complete', collab='Site')
+clusterSamples(soginTAX, taxCol='genus', distmethod='jaccard', clustermethod='complete', collab='Site')
+@
+%%
+
+The user is encouraged to explore many functions available through vegan and other R packages. Commonly useful ones can then be brought into OTUbase to make their use more efficient.
+
+\section{Advanced features}
+
+A number of other functions are available. While the implementation is incomplete, subOTUset() is a function that allows the user to extract any OTUs or samples from the dataset to be analyzed separately. This makes it possible to remove one or more OTUs or samples from the analysis. Eventually this will be implemented using the more traditional '[' notation. 
+
+<<subOTUset>>=
+soginReduced <- subOTUset(soginOTU, samples=c("137", "138", "53R", "55R"))
+soginReduced
+@
+%%
+
+
+\section{The structure of an OTUbase object}
+
+OTUbase objects include a number of possible slots. Inherited from \Rpackage{ShortRead} are sread, id, and quality. These slots, along with otuID, tax, and sampleID are all of identical length and order. For example, the first row in the id slot is connected to the first rows in the sread, quality, otuID, and sampleID slots. In other words, the first id represents the first sequence that has a quality described by the first row of the quality slot; it is a member of the otu listed in the otuID slot and a member of the sample listed in the first row of the sample slot. 
+
+In addition there are two AnnotatedDataFrames. The sampleData data frame is linked to the sampleID slot through the sample IDs. The assignmentData data frame is linked to the otuID slot through the OTU IDs. 
+
+There are slight differences in the OTUset objects and the TAXset objects. In the TAXset objects, the assignmentData data frame is not explicitly linked to the tax slot.
+
+\section{Conclusions and directions for development}
+
+OTUbase provides an organization and structure for OTU data and taxonomic classification data produced during the analysis of amplicon sequences. This allows the user to quickly and easily analyze amplicon data. 
+
+While the structure and a few basic functions are available withing OTUbase, there are a large number of possible improvements and extensions that have yet to be developed. OTUbase provides a structure for the data but functions for downstream analysis are not yet included. Future development will include a better integration of OTUbase with other available R packages such as vegan and the inclusion of a wider variety of functions for data analysis.
+
+
+\section{References}
+
+Sogin, M., H. Morrison, J. Huber, D. Welch, S. Huse, P. Neal, J. Arrieta, and G. Herndl. 2006. Microbial diversity in the deep sea and the underexplored "rare biosphere." Proc. Natl. Acad. Sci. U. S. A. 103:12115-12120
+
+Schloss PD, et al. (2009) Introducing mothur: Open-source, platform-independent, community-supported software for describing and comparing microbial communities. Appl Environ Microbiol 75:7537–7541
+
+Wang, Q, G. M. Garrity, J. M. Tiedje, and J. R. Cole. 2007. Naïve Bayesian Classifier for Rapid Assignment of rRNA Sequences into the New Bacterial Taxonomy. Appl Environ Microbiol. 73(16):5261-7
+
+
+%---------------------------------------------------------
+% SessionInfo
+%---------------------------------------------------------
+\begin{table*}[tbp]
+\begin{minipage}{\textwidth}
+<<sessionInfo, results=tex, print=TRUE>>=
+toLatex(sessionInfo())
+@ 
+\end{minipage}
+\caption{\label{tab:sessioninfo}%
+The output of \Rfunction{sessionInfo} on the build system 
+after running this vignette.}
+\end{table*}
+
+\end{document}

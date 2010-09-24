@@ -1,0 +1,17 @@
+# Sample_ID: Sample ID
+# Site: Site
+# Lat_N: Latitude N (degrees)
+# Long_W: Longitude W (degrees)
+# Depth: Depth (m)
+# Temperature: Temperature (C)
+# Cells: Cells per ml of water
+Sample_ID	Site	Lat_N	Long_W	Depth	Temperature	Cells
+53R	Labrador seawater	58.300	−29.133	1,400	3.5	6.4 × 104
+55R	Oxygen minimum	58.300	−29.133	500	7.1	1.8 × 105
+112R	Lower deep water	50.400	−25.000	4,121	2.3	3.9 × 104
+115R	Oxygen minimum	50.400	−25.000	550	7	1.5 × 105
+137	Labrador seawater	60.900	−38.516	1,710	3	3.3 × 104
+138	Labrador seawater	60.900	−38.516	710	3.5	5.2 × 104
+FS312	Bag City	45.916	−129.983	1,529	31.2	1.2 × 105
+FS396	Marker 52	45.943	−129.985	1,537	24.4	1.6 × 105
+
