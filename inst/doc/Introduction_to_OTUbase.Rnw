@@ -64,7 +64,7 @@ There are two main approaches used to analyse amplicon data. An OTU approach inv
 
 The data produced by these two approaches is slightly different. The OTU approach results in a list of sequences belonging to each OTU. The classification approach results in each sequence having a classification. OTUbase is able to use either of these types of data.
 
-The data processing involved in OTU generation is described by Pat Schloss on the Mothur web site. Those interested can find the OTU generation steps for Sogin's data at \href{http://www.mothur.org/wiki/Sogin\_data\_analysis}. 
+The data processing involved in OTU generation is described by Pat Schloss on the Mothur web site. Those interested can find the OTU generation steps for Sogin's data at \href{http://www.mothur.org/wiki/Sogin_data_analysis}. 
 
 The data processing involved in the RDP taxonomic classification is somewhat simpler and less computationally demanding. Details can be found on the RDP website \href{http://rdp.cme.msu.edu/classifier/classifier.jsp}.
 
