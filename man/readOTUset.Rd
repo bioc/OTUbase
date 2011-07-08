@@ -23,7 +23,7 @@ This function reads in data and creates an OTUset object
     \item{sADF.names}{The column of the sampleADF file that has the sample names.}
     \item{aADF.names}{The column of the assignmentADF file that has the assignment names.}
     \item{rdp}{By default this is FALSE. Change to TRUE if assignmentADF is an RDP classification file. The RDP file must be in the fixed format.}
-    \item{otufiletype}{The type of OTU file. Takes values "mothur" and "cdhit". Defaults to "mothur".}
+    \item{otufiletype}{The type of OTU file. Takes values "mothur", "cdhit", and "blastclust". Defaults to "mothur".}
 }
 
 \examples{

@@ -56,6 +56,27 @@
     return(as.character(otulist))    
 }
 
+# Function to read in BLASTclust files
+.readblastclustotu<-function(ids, filename){
+    # read in data
+    otu_data<-readLines("test.blastclust.list")
+    split_otu<-sapply(otu_data, function(i) unlist(strsplit(i,split=" ")))
+    nclust<-length(split_otu)
+
+    # convert list of clusters into vector of cluster names
+    otu_lens <- sapply(split_otu,length)
+    otu_id <- rep(1:nclust,times=otu_lens)
+    otu_id <- paste("otu",otu_id,sep="")
+    otu_obj <- unlist(split_otu)
+    seqnames<-.getseqname(ids)
+
+    ord <- match(seqnames,otu_obj)
+    otulist<-otu_id[ord]
+    otulist<-as.vector(sapply(otulist,function(d){if (is.na(d)){d<-"NA"}else{d<-d}}))
+    return(as.character(otulist))
+
+}
+
 ####################
 # Function to extract subset of OTUset object given sample or otu names
 subOTUset<-function(object,samples, otus){
@@ -183,6 +204,9 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
         else if (otufiletype=="cdhit"){
             object@id<-.idfromcdhitotu(file.path(dirPath, otufile))
         }
+        else if (otufiletype=="blastclust"){
+            object@id<-.idfromblastclustotu(file.path(dirPath, otufile))
+        }
         else {
             stop("Error: OTU file type not recognized")
         }
@@ -192,11 +216,14 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
 
     if (!missing(otufile)){
         if (otufiletype=="mothur"){
-        	object@otuID <- .readmothurotu(id(object),file.path(dirPath,otufile),level)
+            object@otuID <- .readmothurotu(id(object),file.path(dirPath,otufile),level)
 	}
 	else if (otufiletype=="cdhit"){
-		object@otuID <- .readcdhitotu(id(object), file.path(dirPath,otufile))
+	    object@otuID <- .readcdhitotu(id(object), file.path(dirPath,otufile))
 	}
+        else if (otufiletype=="blastclust"){
+            object@otuID <- .readblastclustotu(id(object), file.path(dirPath, otufile))
+        }
 	else {
 		stop("Error: OTU file type not recognized")
 	}
@@ -283,6 +310,15 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
     })
     otu_data<-as.vector(unlist(otu_data))
     BStringSet(otu_data, use.names=F)
+}
+
+# extracts sequence id from blastclust otufile
+.idfromblastclustotu<-function(filename){
+    # read in data
+    otu_data<-readLines("test.blastclust.list")
+    split_otu<-sapply(otu_data, function(i) unlist(strsplit(i,split=" ")))
+    nclust<-length(split_otu)
+    BStringSet(unlist(split_otu), use.names=F)
 }
 
 # gets seqname from id line
