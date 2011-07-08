@@ -1,12 +1,12 @@
 
-# Matt's readotu function
-.readotu <- function(ids, filename,level){
+# Matt's readotu function (for Mothur otu files)
+.readmothurotu <- function(ids, filename,level){
     if (!is.character(level)) stop("Level must be written as a character string")
     if (length(levels) > 1 ) stop("must specify only one level")
     otu_data <- strsplit(readLines(filename),split="\t")
     levels <- sapply(otu_data,function(x) x[1])
     otu_data <- otu_data[[match(level,levels)]]
-    if (length(otu_data) == 0) stop("something  must have gone wrong")
+    if (length(otu_data) == 0) stop("something must have gone wrong")
 
     nclust <- otu_data[2]
     otu_data<- otu_data[-c(1,2)]
@@ -24,6 +24,37 @@
     return(as.character(otulist))    
 }
 
+# Function to read in cd-hit files
+.readcdhitotu <- function(ids, filename){
+    # read in data
+    filedata<-scan(file=filename,strip.white=T, what=character(), sep="\n")
+
+    # manipulate data into workable format
+    d<-sapply(unlist(strsplit(paste(filedata,collapse="bbbaaarrr"), split="Cluster")), function (i) strsplit(i, split="bbbaaarrr"))
+    d<-d[-1]
+    names(d)<-1:length(d)
+    lapply(d, function(i) i[-1])->d
+    d[[length(d)]][length(d[[length(d)]])+1]<-">"
+    d<-lapply(d, function(i) i[-length(i)])
+
+    split_otu<-lapply(d, function(i){
+        i<-sapply(i, function(j) unlist(strsplit(j, split=">|\\.\\.\\."))[2])
+        names(i)<-character(length(i))
+        i
+    })
+    nclust<-length(split_otu)
+    # convert list of clusters into vector of cluster names
+    otu_lens <- sapply(split_otu,length)
+    otu_id <- rep(1:nclust,times=otu_lens)
+    otu_id <- paste("otu",otu_id,sep="")
+    otu_obj <- unlist(split_otu)
+    seqnames<-.getseqname(ids)
+
+    ord <- match(seqnames,otu_obj)
+    otulist<-otu_id[ord]
+    otulist<-as.vector(sapply(otulist,function(d){if (is.na(d)){d<-"NA"}else{d<-d}}))
+    return(as.character(otulist))    
+}
 
 ####################
 # Function to extract subset of OTUset object given sample or otu names
@@ -133,7 +164,7 @@ getOTUs<-function(object,colnum=1,value=".",exact=F){
 
 
 #combining functions into method that will accept directory and read in data
-readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,samplefile,sampleADF,assignmentADF,sADF.names,aADF.names, rdp=F){
+readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,samplefile,sampleADF,assignmentADF,sADF.names,aADF.names, rdp=F, otufiletype="mothur"){
 
     if(!missing(sampleADF)& missing(samplefile)) stop("Sample file is required to read in sampleADF")
 
@@ -146,13 +177,29 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
         object<-new("OTUsetF",fasta)
     }else if (missing(qualfile) & missing(fastafile)){
         object<-new("OTUsetB")
-        object@id<-.idfromotu(file.path(dirPath,otufile),level)
+        if (otufiletype=="mothur"){
+            object@id<-.idfrommothurotu(file.path(dirPath,otufile),level)
+        }
+        else if (otufiletype=="cdhit"){
+            object@id<-.idfromcdhitotu(file.path(dirPath, otufile))
+        }
+        else {
+            stop("Error: OTU file type not recognized")
+        }
     }else {
         stop("Error: must pass either Fasta, Fasta and Qual, or neither")
     }
 
     if (!missing(otufile)){
-        object@otuID <- .readotu(id(object),file.path(dirPath,otufile),level)
+        if (otufiletype=="mothur"){
+        	object@otuID <- .readmothurotu(id(object),file.path(dirPath,otufile),level)
+	}
+	else if (otufiletype=="cdhit"){
+		object@otuID <- .readcdhitotu(id(object), file.path(dirPath,otufile))
+	}
+	else {
+		stop("Error: OTU file type not recognized")
+	}
         #object<-readotu(object,file.path(dirPath,otufile),level)
         if (!missing(samplefile)){
             object@sampleID <-.readsample(id(object),file.path(dirPath,samplefile))
@@ -205,8 +252,8 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
     
     
 
-# extracts sequence id from otufile (used when no fastafile is present)
-.idfromotu<-function(filename,level){
+# extracts sequence id from mothur otufile (used when no fastafile is present)
+.idfrommothurotu<-function(filename,level){
     if (!is.character(level)) stop("Level must be written as a character string")
     if (length(levels) > 1 ) stop("must specify only one level")
     otu_data <- strsplit(readLines(filename),split="\t")
@@ -218,6 +265,24 @@ readOTUset<-function(dirPath = '.',otufile,level="0.03",fastafile,qualfile,sampl
     split_otu <- unique(unlist(strsplit(otu_data,split=",")))
 
     BStringSet(split_otu,use.names=F)
+}
+
+# extracts sequence id from cdhit otufile
+.idfromcdhitotu<-function(filename){
+    otu_data<-scan(file=filename,strip.white=T, what=character(), sep="\n")
+    d<-sapply(unlist(strsplit(paste(otu_data,collapse="bbbaaarrr"), split="Cluster")), function (i) strsplit(i, split="bbbaaarrr"))
+    d<-d[-1]
+    names(d)<-1:length(d)
+    d<-lapply(d, function(i) i[-1])
+    d[[length(d)]][length(d[[length(d)]])+1]<-">"
+    d<-lapply(d, function(i) i[-length(i)])
+    otu_data<-lapply(d, function(i){
+        i<-sapply(i, function(j) unlist(strsplit(j, split=">|\\.\\.\\."))[2])
+        names(i)<-character(length(i))
+        i
+    })
+    otu_data<-as.vector(unlist(otu_data))
+    BStringSet(otu_data, use.names=F)
 }
 
 # gets seqname from id line
