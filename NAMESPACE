@@ -4,13 +4,14 @@
 #Imports: Biobase, Biostrings, graphics, IRanges, methods, ShortRead,
 #         stats, utils
 
+import(S4Vectors)
 importClassesFrom(Biobase, AnnotatedDataFrame)
 importClassesFrom(Biostrings, BStringSet, DNAStringSet)
 importClassesFrom(methods, character, data.frame)
 importClassesFrom(ShortRead, QualityScore, ShortRead, ShortReadQ)
 importMethodsFrom(Biobase, pData, "pData<-", sampleNames, varLabels, "varLabels<-")
 importMethodsFrom(Biostrings, quality)
-importMethodsFrom(IRanges, na.exclude, width)
+importMethodsFrom(IRanges, width)
 importMethodsFrom(ShortRead, id, readFasta, readQual)
 importFrom(Biobase, read.AnnotatedDataFrame)
 importFrom(Biostrings, BStringSet)

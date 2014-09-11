@@ -3,12 +3,13 @@ Type: Package
 Title: Provides structure and functions for the analysis of OTU data
 Description: Provides a platform for Operational Taxonomic Unit based
         analysis
-Version: 1.15.0
+Version: 1.15.1
 Date: 2010-09-10
 Author: Daniel Beck, Matt Settles, and James A. Foster
 Maintainer: Daniel Beck <danlbek@gmail.com>
-Depends: R (>= 2.9.0), methods, ShortRead (>= 1.4.0), Biobase, vegan
-Imports: Biostrings, ShortRead, IRanges
+Depends: R (>= 2.9.0), methods, S4Vectors, IRanges, ShortRead (>= 1.23.15),
+        Biobase, vegan
+Imports: Biostrings
 License: Artistic-2.0
 LazyLoad: yes
 biocViews: Sequencing, DataImport
