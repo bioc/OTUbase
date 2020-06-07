@@ -6,6 +6,7 @@
 
 \usepackage{times}
 \usepackage{hyperref}
+\usepackage[utf8]{inputenc}
 
 \DeclareUnicodeCharacter{2212}{-}
 
