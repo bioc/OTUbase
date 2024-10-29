@@ -3,7 +3,7 @@ Type: Package
 Title: Provides structure and functions for the analysis of OTU data
 Description: Provides a platform for Operational Taxonomic Unit based
         analysis
-Version: 1.56.0
+Version: 1.57.0
 Date: 2010-09-10
 Author: Daniel Beck, Matt Settles, and James A. Foster
 Maintainer: Daniel Beck <danlbek@gmail.com>
